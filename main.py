@@ -1,18 +1,31 @@
+import configparser
 import sys
+
 from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QDialog,QApplication,QWidget,QMainWindow
+from PyQt5.QtWidgets import QDialog,QApplication,QWidget,QMainWindow,QVBoxLayout,QLineEdit
 import sqlite3
 from PyQt5.QtChart import QChart,QChartView,QValueAxis,QBarCategoryAxis,QBarSet,QBarSeries
 from PyQt5.Qt import Qt
 from PyQt5.QtGui import QPainter
 import random
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
+import matplotlib
+from configparser import ConfigParser
+from passlib.hash import pbkdf2_sha256
+
+config = ConfigParser()
+config.read('config.in')
+print(config.sections())
+
 # import bcrypt
-database_name ='sample'
-with open("myfile.txt", "r+") as file1:
-    # Reading form a file
-    database_name = file1.read()
-    print(database_name)
+database_name = config['DB']['database']
+reports = config['DB']['chart_table']
+loginform = config['DB']['login_table']
+
+
+
 class WelcomeScreen(QMainWindow):
     def __init__(self):
         super(WelcomeScreen,self).__init__()
@@ -35,7 +48,8 @@ class WelcomeScreen(QMainWindow):
             # password = password.encode('utf-8')
             # result = result.encode('utf-8')
             # if bcrypt.checkpw(password,result):
-            if result == password:
+            if pbkdf2_sha256.verify(password,result):
+                print('nice')
                 login = LoginScreen()
                 widgets.addWidget(login)
                 widgets.setCurrentIndex(widgets.currentIndex()+1)
@@ -68,10 +82,11 @@ class LoginScreen(QDialog):
                 # bytes = password.encode('utf-8')
                 # salt = bcrypt.gensalt()
                 # hash = bcrypt.hashpw(bytes, salt)
+                hash = pbkdf2_sha256.hash(password)
                 print('entered')
                 con = sqlite3.connect(database_name)
                 cur = con.cursor()
-                query = f'INSERT INTO loginform (first_name,password) VALUES ("{username}","{hash}")'
+                query = f'INSERT INTO {loginform} (first_name,password) VALUES ("{username}","{hash}")'
                 cur.execute(query)
                 print('welcome')
                 con.commit()
@@ -106,6 +121,8 @@ class ConfigScreen(QDialog):
         self.back4.clicked.connect(self.backs)
         self.login_table.setText('loginform')
         self.chart_table.setText('chart')
+        self.chartT.clicked.connect(self.changeChart)
+        self.loginT.clicked.connect(self.changelogin)
         
     def changedb(self):
         name = self.change_db_name.text()
@@ -113,100 +130,171 @@ class ConfigScreen(QDialog):
             pass
         else:
             database_name = name
-            with open("myfile.txt", "w") as file1:
-                file1.write(name)
-            print(database_name)
+            config.set('DB','DATABASE',name)
+            with open('config.in','w') as configfile:
+                config.write(configfile)
+            
     def backs(self):
         conf = LoginScreen()
         widgets.addWidget(conf)
         widgets.setCurrentIndex(widgets.currentIndex()+1)
 
+    def changelogin(self):
+        name = self.logint.text()
+        if name == '' or name == None:
+            pass
+        else:
+            database_name = name
+            config.set('DB','login_table',name)
+            with open('config.in','w') as configfile:
+                config.write(configfile)        
+    def changeChart(self):
+        name = self.chartt.text()
+        if name == '' or name == None:
+            pass
+        else:
+            database_name = name
+            config.set('DB','chart_table',name)
+            with open('config.in','w') as configfile:
+                config.write(configfile) 
+
+class ChartView(QWidget):
+    # def __init__(self):
+    #     super(ChartView,self).__init__()
+    #     loadUi('chartsV.ui',self)
+    #     self.resize(800,600)
+    #     set0 = QBarSet('data')
+        
+
+    #     con = sqlite3.connect(database_name)
+    #     cur = con.cursor()
+    #     months = ('jan','feb','mar','apr','may','jun')
+
+    #     result = []
+    #     for month in months:
+
+
+    #         query = f'select data from reports where months ="{month}"'
+    #         cur.execute(query)
+    #         val = cur.fetchone()[0]
+    #         val = int(val)
+    #         result.append(val)
+
+
+        
+
+    #     # query = f'select data from reports where months ="feb"'
+    #     # cur.execute(query)
+    #     # result = cur.fetchone()[0]
+
+    #     # result2 = int(result)
+
+    #     # query = f'select data from reports where months ="mar"'
+    #     # cur.execute(query)
+    #     # result = cur.fetchone()[0]
+
+    #     # result3 = int(result)
+
+    #     # query = f'select data from reports where months ="apr"'
+    #     # cur.execute(query)
+    #     # result = cur.fetchone()[0]
+
+    #     # result4 = int(result)
+
+
+    #     # query = f'select data from reports where months ="may"'
+    #     # cur.execute(query)
+    #     # result = cur.fetchone()[0]
+
+    #     # result5 = int(result)
+
+
+    #     # query = f'select data from reports where months ="jun"'
+    #     # cur.execute(query)
+    #     # result = cur.fetchone()[0]
+
+    #     # result6 = int(result)       
+        
+    #     set0.append(result)
+        
+    #     print(result)
+    #     series = QBarSeries()
+    #     series.append(set0)
+        
+
+    #     chart = QChart()
+    #     chart.addSeries(series)
+    #     chart.setAnimationOptions(QChart.SeriesAnimations)
+       
+
+        
+
+
+    #     axisX = QBarCategoryAxis()
+    #     axisX.append(months)
+    #     # axis = QBarCategoryAxis()
+    #     # axis.append(months)
+    #     axisY = QValueAxis()
+         
+    #     axisY.setRange(0,15)
+    #     # chart.createDefaultAxes()
+    #     chart.addAxis(axisX,Qt.AlignBottom)
+    #     chart.addAxis(axisY,Qt.AlignLeft)
+    #     chart.legend().setVisible(True)
+    #     chart.legend().setAlignment(Qt.AlignBottom)
+    #     charView = QChartView(chart)
+    #     self.setCentralWidget(charView)
+    #     # chartview = QChartView(chart)
+    #     # vbox = QVBoxLayout()
+    #     # vbox.addWidget(chartview)
+    #     # self.setLayout(vbox) 
     
 
-
-class ChartView(QMainWindow):
     def __init__(self):
-        super(ChartView,self).__init__()
-        loadUi('chartsV.ui',self)
-        self.resize(800,600)
-        set0 = QBarSet('data')
+        super().__init__()
+        self.window_width,self.window_height = 1200,800
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        self.input = QLineEdit()
         
+        layout.addWidget(self.input)
 
+        self.canvas = FigureCanvas(plt.figure(figsize=(15,6)))
+        layout.addWidget(self.canvas)
+        self.inser_ax()
+        self.updatechart()
+    def inser_ax(self):
+        self.ax = self.canvas.figure.subplots()
+        self.ax.set_ylim([0,20])
+        self.ax.set_xlim([0,7])
+        self.bar = None
+
+    def updatechart(self):
+        
+        x_position = ['0']
+        if self.bar:
+            self.bar.remove() 
+        
         con = sqlite3.connect(database_name)
         cur = con.cursor()
-        query = f'select data from reports where months ="jan"'
-        cur.execute(query)
-        result = cur.fetchone()[0]
-
-        result0 = int(result)
-
-
-        
-
-        query = f'select data from reports where months ="feb"'
-        cur.execute(query)
-        result = cur.fetchone()[0]
-
-        result2 = int(result)
-
-        query = f'select data from reports where months ="mar"'
-        cur.execute(query)
-        result = cur.fetchone()[0]
-
-        result3 = int(result)
-
-        query = f'select data from reports where months ="apr"'
-        cur.execute(query)
-        result = cur.fetchone()[0]
-
-        result4 = int(result)
-
-
-        query = f'select data from reports where months ="may"'
-        cur.execute(query)
-        result = cur.fetchone()[0]
-
-        result5 = int(result)
-
-
-        query = f'select data from reports where months ="jun"'
-        cur.execute(query)
-        result = cur.fetchone()[0]
-
-        result6 = int(result)       
-        
-        set0.append([result0,result2,result3,result4,result5,result6])
-        
-        
-        series = QBarSeries()
-        series.append(set0)
-        
-
-        chart = QChart()
-        chart.addSeries(series)
-        chart.setAnimationOptions(QChart.SeriesAnimations)
-        print(result0,result2)
-
         months = ('jan','feb','mar','apr','may','jun')
+        result = []
+        value = 0
+        self.bar = self.ax.bar(x_position,value,width=0.2,color = 'g')
+        self.canvas.draw()
+        for month in months:
 
 
-        axisX = QBarCategoryAxis()
-        axisX.append(months)
+            query = f'select data from {reports} where months ="{month}"'
+            cur.execute(query)
+            val = cur.fetchone()[0]
+            value =float(val)
+            x_position = [month]
 
-        axisY = QValueAxis()
-        axisY.setRange(0,100)
-        chart.addAxis(axisX,Qt.AlignBottom)
-        chart.addAxis(axisY,Qt.AlignLeft)
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
-        charView = QChartView(chart)
-        self.setCentralWidget(charView)
+            self.bar = self.ax.bar(x_position,value,width=0.2,color = 'g')
+            self.canvas.draw()
 
-
-
-
-
-
+ 
 
 
 app = QApplication(sys.argv)

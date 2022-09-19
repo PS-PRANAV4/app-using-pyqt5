@@ -1,0 +1,4 @@
+[DB]
+database = sample
+login_table = loginform
+chart_table = reports
